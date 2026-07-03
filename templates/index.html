@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Chart Animator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --primary-glow: rgba(74, 144, 226, 0.4);
+            --success: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.4);
+            --bg-dark: #09090b;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(74, 144, 226, 0.08), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(138, 43, 226, 0.08), transparent 25%);
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .main-container {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 560px;
+            width: 90%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(to right, #fff, #a1a1aa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #a1a1aa;
+            font-size: 14px;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 16px;
+            padding: 40px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 24px;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--primary);
+            background: rgba(74, 144, 226, 0.05);
+        }
+
+        .upload-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .upload-text {
+            color: #e4e4e7;
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .upload-subtext {
+            color: #71717a;
+            font-size: 12px;
+            margin-top: 8px;
+            display: block;
+        }
+
+        #imageInput { display: none; }
+
+        .btn {
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #4a90e2, #3b82f6);
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+
+        .btn-submit:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px var(--primary-glow);
+        }
+
+        .btn-submit:disabled {
+            background: #3f3f46;
+            color: #a1a1aa;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        
+        .loader-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-left-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .loading-text { color: #a1a1aa; font-size: 14px; font-weight: 500; }
+
+        
+        #result {
+            display: none;
+            margin-top: 10px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .result-img {
+            width: 100%;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .btn-download {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 4px 15px var(--success-glow);
+            flex: 1;
+        }
+
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px var(--success-glow);
+        }
+
+        .btn-reset {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            flex: 1;
+        }
+
+        .btn-reset:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .brand-footer {
+            margin-top: 40px;
+            font-size: 12px;
+            color: #52525b;
+            letter-spacing: 0.5px;
+        }
+        .brand-footer span {
+            color: #a1a1aa;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <div class="header">
+            <h1>Dynamic Chart Animator</h1>
+            <p>Statik piyasa grafiklerini yapay zeka destekli otonom animasyonlara dönüştürün.</p>
+        </div>
+        
+        <div id="uploadSection">
+            <div class="upload-area" id="dropZone" onclick="document.getElementById('imageInput').click()">
+                <span class="upload-icon">📊</span>
+                <span class="upload-text" id="fileNameText">Grafik görselini buraya sürükleyin veya tıklayın</span>
+                <span class="upload-subtext">Desteklenen formatlar: JPG, PNG</span>
+                <input type="file" id="imageInput" accept="image/*" onchange="updateFileName()">
+            </div>
+
+            <button class="btn btn-submit" id="submitBtn" onclick="uploadImage()" disabled>Animasyonu Başlat</button>
+        </div>
+        
+        <div class="loader-container" id="loading">
+            <div class="spinner"></div>
+            <div class="loading-text">Görüntü analiz ediliyor ve kareler işleniyor...</div>
+        </div>
+        
+        <div id="result">
+            <img id="outputGif" class="result-img" src="" alt="Hareketli Grafik">
+            
+            <div class="action-buttons">
+                <button class="btn btn-reset" onclick="resetUI(true)">Yeni Yükle</button>
+                <a id="downloadLink" href="#" download="animasyonlu_grafik.gif" class="btn btn-download">İndir 📥</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="brand-footer">
+        Powered by <span>Çınar Software</span>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('imageInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const fileNameText = document.getElementById('fileNameText');
+        const uploadSection = document.getElementById('uploadSection');
+        const downloadLink = document.getElementById('downloadLink');
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                updateFileName();
+            }
+        });
+
+        function updateFileName() {
+            if (fileInput.files.length > 0) {
+                fileNameText.textContent = fileInput.files[0].name;
+                fileNameText.style.color = "#4a90e2";
+                submitBtn.disabled = false;
+            }
+        }
+
+        async function uploadImage() {
+            if (!fileInput.files[0]) return;
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            uploadSection.style.display = 'none';
+            document.getElementById('loading').style.display = 'flex';
+            document.getElementById('result').style.display = 'none';
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const timestamp = new Date().getTime();
+                    const gifUrl = data.video_url + "?t=" + timestamp;
+                    
+                    document.getElementById('outputGif').src = gifUrl;
+                    
+                    
+                    downloadLink.href = data.video_url; 
+                    
+                    downloadLink.download = "hareketli_" + fileInput.files[0].name.split('.')[0] + ".gif";
+                    
+                    document.getElementById('result').style.display = 'block';
+                } else {
+                    alert('Hata: ' + data.error);
+                    resetUI();
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('Sunucu ile iletişim kurulamadı. Python terminalini kontrol edin.');
+                resetUI();
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function resetUI(clearFile = false) {
+            if (clearFile) {
+                fileInput.value = '';
+                fileNameText.textContent = "Grafik görselini buraya sürükleyin veya tıklayın";
+                fileNameText.style.color = "#e4e4e7";
+                submitBtn.disabled = true;
+            }
+            uploadSection.style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('loading').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

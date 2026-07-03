@@ -18,5 +18,5 @@ Statik piyasa grafiklerini (örneğin CS2 skin fiyat geçmişleri) soldan sağa 
 
 1. Repoyu bilgisayarınıza klonlayın:
    ```bash
-   git clone [https://github.com/KULLANICI_ADIN/dynamic-chart-animator.git](https://github.com/muraat0/dynamic-chart-animator.git)
+   git clone [https://github.com/muraat0/dynamic-chart-animator.git](https://github.com/muraat0/dynamic-chart-animator.git)
    cd dynamic-chart-animator
